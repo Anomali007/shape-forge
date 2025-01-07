@@ -2,21 +2,38 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { ShapeType } from "@/lib/types/shapes";
-import { Circle, Download, Hexagon, Square, Upload } from "lucide-react";
+import { Circle, Download, Square, Upload, Pencil } from "lucide-react";
 
 interface ToolbarProps {
   onAddShape: (type: ShapeType) => void;
   onExport: () => void;
   onImport: () => void;
   hasImage: boolean;
+  isDrawing: boolean;
+  startDrawing: () => void;
+  stopDrawing: () => void;
+  clearDrawingPoints: () => void;
 }
 
-export const Toolbar = ({
+export function Toolbar({
   onAddShape,
   onExport,
   onImport,
   hasImage,
-}: ToolbarProps) => {
+  isDrawing,
+  startDrawing,
+  stopDrawing,
+  clearDrawingPoints,
+}: ToolbarProps) {
+  const handleDrawingClick = () => {
+    if (isDrawing) {
+      stopDrawing();
+      clearDrawingPoints();
+    } else {
+      startDrawing();
+    }
+  };
+
   return (
     <div className="flex items-center gap-2 p-4 border-b">
       <div className="flex items-center gap-2 mr-4">
@@ -24,7 +41,7 @@ export const Toolbar = ({
           variant="outline"
           size="icon"
           onClick={() => onAddShape("rectangle")}
-          disabled={!hasImage}
+          disabled={!hasImage || isDrawing}
           title="Add Rectangle"
         >
           <Square className="w-4 h-4" />
@@ -33,19 +50,19 @@ export const Toolbar = ({
           variant="outline"
           size="icon"
           onClick={() => onAddShape("circle")}
-          disabled={!hasImage}
+          disabled={!hasImage || isDrawing}
           title="Add Circle"
         >
           <Circle className="w-4 h-4" />
         </Button>
         <Button
-          variant="outline"
+          variant={isDrawing ? "secondary" : "outline"}
           size="icon"
-          onClick={() => onAddShape("polygon")}
+          onClick={handleDrawingClick}
           disabled={!hasImage}
-          title="Add Polygon"
+          title={isDrawing ? "Stop Drawing" : "Start Drawing"}
         >
-          <Hexagon className="w-4 h-4" />
+          <Pencil className="w-4 h-4" />
         </Button>
       </div>
       <div className="flex items-center gap-2">
@@ -69,4 +86,4 @@ export const Toolbar = ({
       </div>
     </div>
   );
-};
+}

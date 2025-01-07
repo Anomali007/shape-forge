@@ -1,13 +1,14 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { PropertiesPanel } from "@/components/ui/properties-panel";
 import { Toolbar } from "@/components/ui/toolbar";
+import { PropertiesPanel } from "@/components/ui/properties-panel";
 import { useShapeStore } from "@/lib/store/useShapeStore";
 import { Shape, ShapeType } from "@/lib/types/shapes";
+import dynamic from "next/dynamic";
 import { ImageUpload } from "@/components/ui/image-upload";
-import { exportScene, importScene } from "@/lib/utils";
+import { ShapeList } from "@/components/ui/shape-list";
 
+// Dynamically import the canvas wrapper with SSR disabled
 const CanvasWrapper = dynamic(
   () =>
     import("@/components/canvas/canvas-wrapper").then(
@@ -25,11 +26,15 @@ export default function ShapeDesigner() {
     updateShape,
     setSelectedId,
     setImage,
-    importScene: importShapes,
+    deleteShape,
+    isDrawing,
+    startDrawing,
+    stopDrawing,
+    clearDrawingPoints,
   } = useShapeStore();
 
   const handleAddShape = (type: ShapeType) => {
-    const newShape = {
+    addShape({
       id: crypto.randomUUID(),
       type,
       x: 100,
@@ -40,57 +45,32 @@ export default function ShapeDesigner() {
       points: type === "polygon" ? [] : undefined,
       fill: "#00D2FF",
       opacity: 0.5,
-    } as Shape;
-
-    addShape(newShape);
-    setSelectedId(newShape.id);
+    } as Shape);
   };
 
   const selectedShape = selectedId
     ? shapes.find((s) => s.id === selectedId)
     : undefined;
 
-  const handleShapeClick = (shape: Shape) => {
-    setSelectedId(shape.id);
-  };
-
-  const handleExport = () => {
-    if (currentImage) {
-      exportScene({ image: currentImage, shapes });
-    }
-  };
-
-  const handleImport = async () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json";
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        try {
-          const scene = await importScene(file);
-          importShapes(scene);
-        } catch (error) {
-          console.error("Failed to import scene:", error);
-        }
-      }
-    };
-    input.click();
-  };
-
   return (
     <div className="flex flex-col h-screen">
       <Toolbar
         onAddShape={handleAddShape}
-        onExport={handleExport}
-        onImport={handleImport}
+        onExport={() => {}}
+        onImport={() => {}}
         hasImage={!!currentImage}
+        isDrawing={isDrawing}
+        startDrawing={startDrawing}
+        stopDrawing={stopDrawing}
+        clearDrawingPoints={clearDrawingPoints}
       />
-      <div className="flex flex-1 overflow-hidden">
-        <div className="flex-1 relative">
+      <div className="flex-1 flex gap-4 p-4 min-h-0">
+        <div className="flex-1 min-w-0 relative">
           {!currentImage ? (
-            <div className="absolute inset-0 p-8">
-              <ImageUpload onImageSelect={setImage} />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-96">
+                <ImageUpload onImageSelect={setImage} />
+              </div>
             </div>
           ) : (
             <CanvasWrapper
@@ -98,18 +78,29 @@ export default function ShapeDesigner() {
               selectedId={selectedId}
               currentImage={currentImage}
               onShapeUpdate={updateShape}
-              onShapeClick={handleShapeClick}
+              onShapeClick={setSelectedId}
+              onShapeAdd={addShape}
             />
           )}
         </div>
-        {selectedShape && (
-          <div className="w-80 border-l">
-            <PropertiesPanel
-              selectedShape={selectedShape}
-              onUpdate={updateShape}
+        <div className="w-[500px] flex gap-4">
+          <div className="flex-1 border rounded-lg overflow-auto">
+            <ShapeList
+              shapes={shapes}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onDelete={deleteShape}
             />
           </div>
-        )}
+          {selectedShape && (
+            <div className="flex-1 border rounded-lg overflow-auto">
+              <PropertiesPanel
+                selectedShape={selectedShape}
+                onUpdate={updateShape}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

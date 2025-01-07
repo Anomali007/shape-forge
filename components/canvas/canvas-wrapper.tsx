@@ -1,18 +1,22 @@
 "use client";
 
-import { ResponsiveStage } from "./responsive-stage";
-import { ImageLayer } from "./image-layer";
-import { ShapeLayer } from "./shape-layer";
-import { Layer } from "react-konva";
 import { Shape } from "@/lib/types/shapes";
-import { useState } from "react";
+import dynamic from "next/dynamic";
+
+const KonvaWrapper = dynamic(
+  () => import("./konva-wrapper").then((mod) => mod.KonvaWrapper),
+  {
+    ssr: false,
+  }
+);
 
 interface CanvasWrapperProps {
   shapes: Shape[];
   selectedId?: string;
   currentImage?: string;
   onShapeUpdate: (shape: Shape) => void;
-  onShapeClick: (shape: Shape) => void;
+  onShapeClick: (id: string) => void;
+  onShapeAdd: (shape: Shape) => void;
 }
 
 export function CanvasWrapper({
@@ -21,33 +25,18 @@ export function CanvasWrapper({
   currentImage,
   onShapeUpdate,
   onShapeClick,
+  onShapeAdd,
 }: CanvasWrapperProps) {
-  const [stageDimensions, setStageDimensions] = useState({
-    width: 0,
-    height: 0,
-  });
-
-  const handleStageResize = (width: number, height: number) => {
-    setStageDimensions({ width, height });
-  };
-
   return (
-    <ResponsiveStage onResize={handleStageResize}>
-      <Layer>
-        <ImageLayer
-          imageUrl={currentImage}
-          stageWidth={stageDimensions.width}
-          stageHeight={stageDimensions.height}
-        />
-      </Layer>
-      <Layer>
-        <ShapeLayer
-          shapes={shapes}
-          selectedId={selectedId}
-          onShapeUpdate={onShapeUpdate}
-          onShapeClick={onShapeClick}
-        />
-      </Layer>
-    </ResponsiveStage>
+    <div className="canvas-container flex-1 min-h-0">
+      <KonvaWrapper
+        shapes={shapes}
+        selectedId={selectedId}
+        currentImage={currentImage}
+        onShapeUpdate={onShapeUpdate}
+        onShapeClick={onShapeClick}
+        onShapeAdd={onShapeAdd}
+      />
+    </div>
   );
 }

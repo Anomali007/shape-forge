@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { Button } from "./button";
 import { Upload } from "lucide-react";
 
@@ -9,17 +9,20 @@ interface ImageUploadProps {
 }
 
 export function ImageUpload({ onImageSelect }: ImageUploadProps) {
-  const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const imageUrl = e.target?.result as string;
-          onImageSelect(imageUrl);
-        };
-        reader.readAsDataURL(file);
-      }
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleFile = useCallback(
+    (file: File) => {
+      if (!file.type.startsWith("image/")) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result;
+        if (typeof result === "string") {
+          onImageSelect(result);
+        }
+      };
+      reader.readAsDataURL(file);
     },
     [onImageSelect]
   );
@@ -27,47 +30,55 @@ export function ImageUpload({ onImageSelect }: ImageUploadProps) {
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
+      setIsDragging(false);
+
       const file = e.dataTransfer.files[0];
-      if (file && file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const imageUrl = e.target?.result as string;
-          onImageSelect(imageUrl);
-        };
-        reader.readAsDataURL(file);
-      }
+      if (file) handleFile(file);
     },
-    [onImageSelect]
+    [handleFile]
   );
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-  };
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleFileSelect = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) handleFile(file);
+    },
+    [handleFile]
+  );
 
   return (
     <div
-      className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 border-gray-300"
+      className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+        isDragging ? "border-primary bg-primary/10" : "border-border"
+      }`}
       onDrop={handleDrop}
       onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
     >
-      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-        <Upload className="w-8 h-8 mb-4 text-gray-500" />
-        <p className="mb-2 text-sm text-gray-500">
-          <span className="font-semibold">Click to upload</span> or drag and
-          drop
-        </p>
-        <p className="text-xs text-gray-500">PNG, JPG or GIF</p>
-      </div>
-      <input
-        type="file"
-        className="hidden"
-        accept="image/*"
-        onChange={handleFileChange}
-        id="image-upload"
-      />
-      <Button asChild variant="outline">
-        <label htmlFor="image-upload" className="cursor-pointer">
-          Select Image
+      <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+      <h3 className="text-lg font-medium mb-2">Upload an image</h3>
+      <p className="text-sm text-muted-foreground mb-4">
+        Drag and drop an image here, or click to select one
+      </p>
+      <Button variant="outline" asChild>
+        <label>
+          Browse
+          <input
+            type="file"
+            className="hidden"
+            accept="image/*"
+            onChange={handleFileSelect}
+          />
         </label>
       </Button>
     </div>

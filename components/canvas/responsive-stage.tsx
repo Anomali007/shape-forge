@@ -2,10 +2,12 @@
 "use client";
 import { Stage, StageProps } from "react-konva";
 import { useEffect, useState, useRef, useCallback } from "react";
+import type { KonvaEventObject } from "konva/lib/Node";
 
 interface ResponsiveStageProps extends Omit<StageProps, "width" | "height"> {
   children: React.ReactNode;
   onResize?: (width: number, height: number) => void;
+  onClick?: (e: KonvaEventObject<MouseEvent>) => void;
 }
 
 interface StageDimensions {
@@ -16,6 +18,7 @@ interface StageDimensions {
 export const ResponsiveStage = ({
   children,
   onResize,
+  onClick,
   ...props
 }: ResponsiveStageProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -68,7 +71,12 @@ export const ResponsiveStage = ({
 
   return (
     <div ref={containerRef} className="w-full h-full">
-      <Stage width={dimensions.width} height={dimensions.height} {...props}>
+      <Stage
+        width={dimensions.width}
+        height={dimensions.height}
+        onClick={onClick}
+        {...props}
+      >
         {children}
       </Stage>
     </div>
